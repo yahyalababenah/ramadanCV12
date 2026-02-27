@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Ramadan Pen - Light Blue Edition</title>
+  <title>ramadan pen - pro</title>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
@@ -10,7 +10,7 @@
     
     body { 
       margin: 0; 
-      background: #050a0a; 
+      background: #0a0805; 
       overflow: hidden; 
       font-family: 'Courier New', monospace;
       display: flex;
@@ -20,18 +20,18 @@
       width: 100vw;
     }
     
-    /* Container enlarged and color changed to Light Blue */
+    /* Container for the ring light effect */
     .container {
       position: relative;
-      width: 85vw; /* تكبير العرض */
-      height: 85vh; /* تكبير الطول */
-      max-width: 1200px;
-      max-height: 900px;
+      width: 80vw;  /* تم تكبير العرض قليلاً */
+      height: 80vh; /* تم تكبير الطول قليلاً */
+      max-width: 1200px; /* تم تكبير الحد الأقصى */
+      max-height: 900px; /* تم تكبير الحد الأقصى */
       min-width: 400px;
       min-height: 300px;
     }
     
-    /* Ring light border effect - Light Blue Theme */
+    /* Ring light border effect - تم تغييره للأزرق الفاتح */
     .container::before {
       content: '';
       position: absolute;
@@ -40,7 +40,7 @@
       right: -20px;
       bottom: -20px;
       border-radius: 30px;
-      background: linear-gradient(45deg, #00d4ff, #008fb3, #00d4ff, #005f73, #00d4ff);
+      background: linear-gradient(45deg, #00D4FF, #00A3CC, #00D4FF, #007399, #00D4FF);
       background-size: 400% 400%;
       z-index: -1;
       animation: ringPulse 3s ease infinite;
@@ -55,7 +55,7 @@
       50% { background-position: 100% 50%; }
     }
     
-    /* Inner glow overlay */
+    /* Inner glow overlay - تم تغييره للأزرق الفاتح */
     .container::after {
       content: '';
       position: absolute;
@@ -72,6 +72,7 @@
       z-index: 10;
     }
     
+    /* Video as background inside container - NO TINT */
     video {
       position: absolute;
       top: 0;
@@ -82,10 +83,11 @@
       transform: scaleX(-1);
       z-index: 0;
       opacity: 0.6;
-      filter: contrast(1.1) brightness(0.9);
+      filter: contrast(1.05) brightness(0.95);
       border-radius: 12px;
     }
     
+    /* Canvas on top for drawing */
     canvas {
       position: absolute;
       top: 0;
@@ -102,10 +104,10 @@
       top: 20px; 
       left: 20px; 
       z-index: 20;
-      color: #00d4ff; 
+      color: #00D4FF; /* أزرق فاتح */
       font-size: 11px; 
       opacity: 0.95;
-      text-shadow: 0 0 10px rgba(0, 212, 255, 0.9), 0 0 20px rgba(0,0,0,0.9);
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.9), 0 0 20px rgba(0,0,0,0.9); /* أزرق فاتح */
       pointer-events: none;
     }
     .instruction { 
@@ -114,9 +116,10 @@
       padding: 4px 8px; 
       display: inline-block;
       border-radius: 4px;
-      border: 1px solid rgba(0, 212, 255, 0.3);
+      border: 1px solid rgba(0, 212, 255, 0.3); /* أزرق فاتح */
     }
     
+    /* Corner accents - أزرق فاتح */
     .corner {
       position: absolute;
       width: 30px;
@@ -130,11 +133,12 @@
     .corner-bl { bottom: -5px; left: -5px; border-right: none; border-top: none; }
     .corner-br { bottom: -5px; right: -5px; border-left: none; border-top: none; }
     
+    /* Resize handle indicator */
     .resize-hint {
       position: absolute;
       bottom: 10px;
       right: 10px;
-      color: rgba(0, 212, 255, 0.5);
+      color: rgba(0, 212, 255, 0.5); /* أزرق فاتح */
       font-size: 10px;
       z-index: 20;
       pointer-events: none;
@@ -161,11 +165,18 @@
   </div>
   
   <script>
-    // Filters and Classes remain same
+    // ==========================================
+    // KALMAN FILTER - for predictive smoothing
+    // ==========================================
     class KalmanFilter {
       constructor(R = 0.008, Q = 0.12) {
-        this.R = R; this.Q = Q; this.P = 1; this.X = 0; this.K = 0;
+        this.R = R;
+        this.Q = Q;
+        this.P = 1;
+        this.X = 0;
+        this.K = 0;
       }
+      
       update(measurement) {
         this.P = this.P + this.Q;
         this.K = this.P / (this.P + this.R);
@@ -173,58 +184,116 @@
         this.P = (1 - this.K) * this.P;
         return this.X;
       }
-      reset() { this.P = 1; this.X = 0; }
+      
+      reset() {
+        this.P = 1;
+        this.X = 0;
+      }
     }
 
+    // ==========================================
+    // ONE EURO FILTER - adaptive smoothing
+    // ==========================================
     class OneEuroFilter {
       constructor(freq = 60, mincutoff = 0.8, beta = 0.005, dcutoff = 1.0) {
-        this.freq = freq; this.mincutoff = mincutoff; this.beta = beta; this.dcutoff = dcutoff;
-        this.x_prev = null; this.dx_prev = null; this.t_prev = null;
+        this.freq = freq;
+        this.mincutoff = mincutoff;
+        this.beta = beta;
+        this.dcutoff = dcutoff;
+        this.x_prev = null;
+        this.dx_prev = null;
+        this.t_prev = null;
       }
-      smoothingFactor(t, cutoff) { const r = 2 * Math.PI * cutoff * t; return r / (r + 1); }
-      exponentialSmoothing(x, x_prev, alpha) { return alpha * x + (1 - alpha) * x_prev; }
+      
+      smoothingFactor(t, cutoff) {
+        const r = 2 * Math.PI * cutoff * t;
+        return r / (r + 1);
+      }
+      
+      exponentialSmoothing(x, x_prev, alpha) {
+        return alpha * x + (1 - alpha) * x_prev;
+      }
+      
       filter(x, t) {
-        if (this.x_prev === null) { this.x_prev = x; this.dx_prev = 0; this.t_prev = t; return x; }
+        if (this.x_prev === null) {
+          this.x_prev = x;
+          this.dx_prev = 0;
+          this.t_prev = t;
+          return x;
+        }
+        
         const t_e = t - this.t_prev;
         const dx = (x - this.x_prev) / t_e;
         const dx_hat = this.exponentialSmoothing(dx, this.dx_prev, this.smoothingFactor(t_e, this.dcutoff));
         const cutoff = this.mincutoff + this.beta * Math.abs(dx_hat);
         const x_hat = this.exponentialSmoothing(x, this.x_prev, this.smoothingFactor(t_e, cutoff));
-        this.x_prev = x_hat; this.dx_prev = dx_hat; this.t_prev = t;
+        
+        this.x_prev = x_hat;
+        this.dx_prev = dx_hat;
+        this.t_prev = t;
+        
         return x_hat;
       }
-      reset() { this.x_prev = null; this.dx_prev = null; this.t_prev = null; }
+      
+      reset() {
+        this.x_prev = null;
+        this.dx_prev = null;
+        this.t_prev = null;
+      }
     }
 
-    const vec2 = { dist: (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2) };
+    const vec2 = {
+      dist: (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2),
+    };
 
+    // ==========================================
+    // MAIN APP
+    // ==========================================
     var vid = document.getElementById('vid');
     var c = document.getElementById('c');
     var ctx = c.getContext('2d');
     var container = document.getElementById('container');
     
+    // Track container dimensions for accurate coordinate mapping
     var containerRect = null;
-    var scaleX = 1; var scaleY = 1;
-    var strokes = []; var currentStroke = [];
-    var isDrawing = false;
-    var rKeyPressed = false; // التغيير هنا لمفتاح R
+    var scaleX = 1;
+    var scaleY = 1;
     
+    var strokes = [];
+    var currentStroke = [];
+    var isDrawing = false;
+    var rPressed = false; // تم تغيير المتغير من shiftPressed
+    
+    // Improved filters for windowed mode
     var kf_x = new KalmanFilter(0.006, 0.1);
     var kf_y = new KalmanFilter(0.006, 0.1);
     var euro_x = new OneEuroFilter(60, 0.4, 0.008, 1.0);
     var euro_y = new OneEuroFilter(60, 0.4, 0.008, 1.0);
     
-    var rawPos = null; var smoothPos = null; var finalPos = null;
-    var lastPos = null; var velocity = { x: 0, y: 0 }; var speed = 0;
-    var handDetected = false; var lostHandTimer = 0; var zDepth = 0;
-    var detectionQuality = 0; var lastTime = performance.now(); var fps = 60;
+    var rawPos = null;
+    var smoothPos = null;
+    var finalPos = null;
+    var lastPos = null;
+    var velocity = { x: 0, y: 0 };
+    var speed = 0;
+    
+    var handDetected = false;
+    var lostHandTimer = 0;
+    var zDepth = 0;
+    var detectionQuality = 0;
+    
+    var lastTime = performance.now();
+    var fps = 60;
 
+    // Update dimensions on resize
     function updateDimensions() {
       containerRect = container.getBoundingClientRect();
+      // Set canvas internal resolution to match display size for sharp rendering
       if (c.width !== containerRect.width || c.height !== containerRect.height) {
         c.width = containerRect.width;
         c.height = containerRect.height;
       }
+      // Calculate scale factors for coordinate mapping
       scaleX = containerRect.width;
       scaleY = containerRect.height;
     }
@@ -233,14 +302,19 @@
     updateDimensions();
 
     window.onkeydown = function(e) {
-      if (e.key === 'r' || e.key === 'R') rKeyPressed = true; // تفعيل الرسم عند الضغط على R
-      if (e.code === 'Space') { strokes = []; currentStroke = []; }
+      // تم التغيير لمفتاح R
+      if (e.key === 'r' || e.key === 'R') rPressed = true;
+      if (e.code === 'Space') {
+        strokes = [];
+        currentStroke = [];
+      }
       if (e.key === 's' || e.key === 'S') saveDrawing();
     };
     
     window.onkeyup = function(e) {
-      if (e.key === 'r' || e.key === 'R') { // إيقاف الرسم عند رفع اليد عن R
-        rKeyPressed = false;
+      // تم التغيير لمفتاح R
+      if (e.key === 'r' || e.key === 'R') {
+        rPressed = false;
         isDrawing = false;
         if (currentStroke.length > 0) {
           strokes.push([...currentStroke]);
@@ -251,7 +325,7 @@
 
     function saveDrawing() {
       const link = document.createElement('a');
-      link.download = 'drawing-' + Date.now() + '.png';
+      link.download = 'ramadan-drawing-' + Date.now() + '.png';
       link.href = c.toDataURL();
       link.click();
     }
@@ -260,49 +334,94 @@
       const now = performance.now();
       const dt = (now - lastTime) / 1000;
       lastTime = now;
+      fps = 0.9 * fps + 0.1 * (1 / dt);
+      
       const ind = lm[8];
-      detectionQuality = (ind.visibility || 0.8);
+      const wrist = lm[0];
+      const middle = lm[12];
+      
+      // Calculate detection quality based on landmark confidence
+      detectionQuality = (ind.visibility || 0.8) * 0.5 + (wrist.visibility || 0.8) * 0.5;
+      
       zDepth = ind.z || 0;
+      
+      // Map normalized coordinates (0-1) to container dimensions
+      // MediaPipe returns normalized coordinates regardless of input resolution
       const rx = ind.x * scaleX;
       const ry = ind.y * scaleY;
+      
+      // Apply stronger smoothing for windowed mode stability
       const kx = kf_x.update(rx);
       const ky = kf_y.update(ry);
+      
       const ex = euro_x.filter(kx, now);
       const ey = euro_y.filter(ky, now);
+      
+      rawPos = { x: rx, y: ry };
+      smoothPos = { x: kx, y: ky };
       finalPos = { x: ex, y: ey };
+      
       if (lastPos) {
         velocity.x = (finalPos.x - lastPos.x) / dt;
         velocity.y = (finalPos.y - lastPos.y) / dt;
         speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
       }
       lastPos = { ...finalPos };
+      
       handDetected = true;
       lostHandTimer = 0;
+      
       return finalPos;
+    }
+
+    function resetTracking() {
+      kf_x.reset();
+      kf_y.reset();
+      euro_x.reset();
+      euro_y.reset();
+      rawPos = null;
+      smoothPos = null;
+      finalPos = null;
+      lastPos = null;
+      velocity = { x: 0, y: 0 };
+      speed = 0;
+      handDetected = false;
+      detectionQuality = 0;
     }
 
     function drawStroke(stroke, alpha = 1) {
       if (stroke.length < 2) return;
+      
       ctx.beginPath();
       ctx.moveTo(stroke[0].x, stroke[0].y);
+      
       for (let i = 1; i < stroke.length - 1; i++) {
         const xc = (stroke[i].x + stroke[i + 1].x) / 2;
         const yc = (stroke[i].y + stroke[i + 1].y) / 2;
         ctx.quadraticCurveTo(stroke[i].x, stroke[i].y, xc, yc);
       }
+      
+      if (stroke.length > 1) {
+        const last = stroke[stroke.length - 1];
+        ctx.lineTo(last.x, last.y);
+      }
+      
       ctx.globalAlpha = alpha;
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
     function run(res) {
+      // Ensure dimensions are up to date
       updateDimensions();
+      
       ctx.clearRect(0, 0, c.width, c.height);
       
-      // Blue theme styling
-      ctx.shadowColor = '#00d4ff';
-      ctx.shadowBlur = 15;
-      ctx.strokeStyle = '#00d4ff';
+      // Dynamic shadow based on detection quality
+      const qualityGlow = 10 + (detectionQuality * 20);
+      ctx.shadowColor = '#00D4FF'; // أزرق فاتح
+      ctx.shadowBlur = qualityGlow;
+      ctx.strokeStyle = '#00D4FF'; // أزرق فاتح
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       
@@ -318,42 +437,123 @@
       
       if (res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
         const lm = res.multiHandLandmarks[0];
-        const scaledLm = lm.map(p => ({ x: p.x * scaleX, y: p.y * scaleY, z: p.z }));
+        
+        // Scale landmarks to container dimensions for drawing
+        const scaledLm = lm.map(p => ({
+          x: p.x * scaleX / c.width,
+          y: p.y * scaleY / c.height,
+          z: p.z
+        }));
         
         ctx.shadowBlur = 0;
-        drawConnectors(ctx, scaledLm, HAND_CONNECTIONS, { color: 'rgba(0, 212, 255, 0.2)', lineWidth: 1 });
+        drawConnectors(ctx, scaledLm, HAND_CONNECTIONS, {
+          color: 'rgba(0, 212, 255, 0.2)', // أزرق فاتح
+          lineWidth: 1
+        });
+        drawLandmarks(ctx, scaledLm, {
+          color: 'rgba(255, 255, 255, 0.4)', 
+          lineWidth: 1, 
+          radius: 2
+        });
         
         const pos = processLandmarks(lm);
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = rKeyPressed ? '#FFFFFF' : '#00d4ff';
+        
+        const speedRatio = Math.min(1, speed / 100);
+        // حساب درجات الأزرق الفاتح ديناميكياً لتفتيح اللون مع السرعة
+        const r = Math.floor(0 + 255 * speedRatio);
+        const g = Math.floor(212 + (255 - 212) * speedRatio);
+        const b = 255;
+        
+        ctx.shadowBlur = 15 + speedRatio * 10;
+        ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+        ctx.fillStyle = rPressed ? '#FFFFFF' : `rgba(${r}, ${g}, ${b}, 0.9)`;
         
         const zFactor = Math.max(0.5, Math.min(1.5, 1 - zDepth * 2));
+        const cursorSize = 8 * zFactor;
+        
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 8 * zFactor, 0, 2 * Math.PI);
+        ctx.arc(pos.x, pos.y, cursorSize, 0, 2 * Math.PI);
         ctx.fill();
         
-        if (rKeyPressed) {
+        if (speed > 5) {
+          ctx.strokeStyle = 'rgba(0, 212, 255, 0.4)'; // أزرق فاتح
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+          ctx.lineTo(pos.x + velocity.x * 0.05, pos.y + velocity.y * 0.05);
+          ctx.stroke();
+        }
+        
+        // Improved drawing logic with better threshold for windowed mode
+        if (rPressed) {
           if (!isDrawing) {
-            isDrawing = true;
-            currentStroke = [{ x: pos.x, y: pos.y }];
+            // Lower speed threshold for easier drawing in small windows
+            if (speed > 5 || currentStroke.length === 0) {
+              isDrawing = true;
+              currentStroke = [{ x: pos.x, y: pos.y, speed: speed, z: zDepth }];
+            }
           } else {
             const lastPoint = currentStroke[currentStroke.length - 1];
-            if (vec2.dist(pos, lastPoint) > 2) {
-              currentStroke.push({ x: pos.x, y: pos.y });
+            const dist = vec2.dist(pos, lastPoint);
+            
+            // Adaptive distance threshold based on window size
+            const minDist = Math.max(1.5, Math.min(3, scaleX * 0.002));
+            
+            if (dist > minDist) {
+              currentStroke.push({ 
+                x: pos.x, 
+                y: pos.y, 
+                speed: speed,
+                z: zDepth,
+                width: Math.max(2, 6 - speed * 0.05)
+              });
             }
           }
+        } else {
+          if (isDrawing) {
+            isDrawing = false;
+            if (currentStroke.length > 1) {
+              strokes.push([...currentStroke]);
+            }
+            currentStroke = [];
+          }
+        }
+        
+      } else {
+        lostHandTimer++;
+        if (lostHandTimer > 15) {
+          if (isDrawing && currentStroke.length > 1) {
+            strokes.push([...currentStroke]);
+          }
+          currentStroke = [];
+          isDrawing = false;
+          resetTracking();
         }
       }
     }
 
-    var h = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-    h.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+    var h = new Hands({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      }
+    });
+    
+    h.setOptions({ 
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+    
     h.onResults(run);
 
     var cam = new Camera(vid, {
       onFrame: async () => { await h.send({image: vid}); },
-      width: 1280, height: 720
+      width: 1280,
+      height: 720,
+      facingMode: 'user'
     });
+    
     cam.start();
   </script>
 </body>
